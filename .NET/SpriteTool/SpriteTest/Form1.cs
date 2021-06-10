@@ -12,13 +12,20 @@ using System.Windows.Forms;
 
 namespace SpriteTest
 {
+    /// <summary>
+    /// author:hy 
+    /// </summary>
     public partial class Form1 : Form
     {
         public Form1()
         {
             InitializeComponent();
         }
-
+        /// <summary>
+        /// 分割
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void button1_Click(object sender, EventArgs e)
         {
             //sprite json文件
@@ -46,6 +53,9 @@ namespace SpriteTest
                 paramlist.Add(p);
             }
 
+            string strPath = textBox3.Text + @"\spriteicon\";
+            if (!Directory.Exists(strPath)) Directory.CreateDirectory(strPath);
+
             using (Bitmap map = (Bitmap)Image.FromFile(textBox3.Text.Contains(".png") ? textBox3.Text : textBox3.Text + @"\sprite.png"))
             {
 
@@ -64,13 +74,15 @@ namespace SpriteTest
                                 itemMap.SetPixel(i, j, color);
                             }
                         }
+
+                       
                         //保存
-                        string savepath = System.Environment.CurrentDirectory + @"\spriteicon\" + itemp.name + ".png";
-                        if (!Directory.Exists(savepath)) Directory.CreateDirectory(savepath);
+                        string savepath = strPath + itemp.name + ".png";
                         itemMap.Save(savepath);
                     }
                 }
             }
+            MessageBox.Show("操作完成");
         }
         private static string ReadFile(string path)
         {
@@ -83,60 +95,7 @@ namespace SpriteTest
             }
             return jsonobj;
         }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            DirectoryInfo folder = new DirectoryInfo(System.Environment.CurrentDirectory);
-            List<string> filenames = new List<string>();
-            int addnum = Convert.ToInt32(textBox2.Text);
-            foreach (var NextFolder in folder.GetFiles("*.png"))
-            {
-                if (NextFolder.Name.Contains(txt_IcoName.Text))
-                {
-                    filenames.Add(NextFolder.Name);
-                }
-            }
-            foreach (var item in filenames)
-            {
-                using (Bitmap map = (Bitmap)Image.FromFile(System.Environment.CurrentDirectory + "/" + item))
-                {
-                    using (Bitmap editMap = new Bitmap(map.Width, map.Height + addnum))
-                    {
-                        int centernum = map.Height / 2;
-                        for (int i = 0; i < map.Height; i++)
-                        {
-                            for (int j = 0; j < map.Width; j++)
-                            {
-                                //获取像素
-                                Color color = map.GetPixel(j, i);
-                                if (i == centernum)
-                                {
-                                    editMap.SetPixel(j, i, color);
-                                    if (addnum > 0)
-                                    {
-                                        for (int m = 0; m < addnum; m++)
-                                        {
-                                            editMap.SetPixel(j, i + m + 1, color);
-                                        }
-                                    }
-                                }
-                                else if (i < centernum)
-                                {
-                                    editMap.SetPixel(j, i, color);
-                                }
-                                else
-                                {
-                                    editMap.SetPixel(j, i + addnum, color);
-                                }
-                            }
-                        }
-                        //保存
-                        string savepath = System.Environment.CurrentDirectory + @"\result\" + item;
-                        editMap.Save(savepath);
-                    }
-                }
-            }
-        }
+       
         /// <summary>
         /// 合成
         /// </summary>
@@ -192,6 +151,11 @@ namespace SpriteTest
                 allheight += item.Select(m => m.height).Max();
             }
 
+
+            //保存到上一级路径
+            string strSavePath = strPath.Substring(0, strPath.LastIndexOf(@"\"));
+            //if (!Directory.Exists(strSavePath)) Directory.CreateDirectory(strSavePath);
+
             StringBuilder strsCss = new StringBuilder();
             string spritejson = "{";
             //开始画大图
@@ -232,28 +196,92 @@ namespace SpriteTest
                     heighttemp += rowparams[i].Select(m => m.height).Max();
                 }
 
-                //保存到上一级路径
-                strPath = strPath.Substring(0, strPath.LastIndexOf(@"\"));
-
                 //保存大图
-                string savepath = strPath + @"\" + txt_spriteName.Text + ".png";
-                if (!Directory.Exists(strPath)) Directory.CreateDirectory(strPath);
+                string savepath = strSavePath + @"\" + txt_spriteName.Text + ".png";
                 editMap.Save(savepath);
             }
             spritejson = spritejson.TrimEnd(',');
             spritejson += "}";
             //写入文件
-            using (StreamWriter fw = new StreamWriter(strPath + @"\" + txt_spriteName.Text + ".json"))
+            using (StreamWriter fw = new StreamWriter(strSavePath + @"\" + txt_spriteName.Text + ".json"))
             {
                 fw.WriteLine(spritejson);
             }
 
             //写入文件
-            using (StreamWriter fw = new StreamWriter(strPath + @"\" + txt_spriteName.Text + ".css"))
+            using (StreamWriter fw = new StreamWriter(strSavePath + @"\" + txt_spriteName.Text + ".css"))
             {
                 fw.WriteLine(strsCss.ToString());
             }
+            MessageBox.Show("操作完成");
         }
+
+        /// <summary>
+        /// label增加/减少高度
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void button2_Click(object sender, EventArgs e)
+        {
+            DirectoryInfo folder = new DirectoryInfo(textBox3.Text);
+            List<string> filenames = new List<string>();
+            int addnum = Convert.ToInt32(textBox2.Text);
+            foreach (var NextFolder in folder.GetFiles("*.png"))
+            {
+                if (NextFolder.Name.Contains(txt_IcoName.Text))
+                {
+                    filenames.Add(NextFolder.Name);
+                }
+            }
+
+            string strPath = textBox3.Text + @"\result\";
+            if (!Directory.Exists(strPath)) Directory.CreateDirectory(strPath);
+
+            foreach (var item in filenames)
+            {
+                using (Bitmap map = (Bitmap)Image.FromFile(textBox3.Text + "/" + item))
+                {
+                    using (Bitmap editMap = new Bitmap(map.Width, map.Height + addnum))
+                    {
+                        int centernum = map.Height / 2;
+                        for (int i = 0; i < map.Height; i++)
+                        {
+                            for (int j = 0; j < map.Width; j++)
+                            {
+                                //获取像素
+                                Color color = map.GetPixel(j, i);
+                                if (i == centernum)
+                                {
+                                    editMap.SetPixel(j, i, color);
+                                    if (addnum > 0)
+                                    {
+                                        for (int m = 0; m < addnum; m++)
+                                        {
+                                            editMap.SetPixel(j, i + m + 1, color);
+                                        }
+                                    }
+                                }
+                                else if (i < centernum)
+                                {
+                                    editMap.SetPixel(j, i, color);
+                                }
+                                else
+                                {
+                                    editMap.SetPixel(j, i + addnum, color);
+                                }
+                            }
+                        }
+
+
+                        //保存
+                        string savepath = strPath + item;
+                        editMap.Save(savepath);
+                    }
+                }
+            }
+            MessageBox.Show("操作完成");
+        }
+
         /// <summary>
         /// lable增加宽度
         /// </summary>
@@ -261,7 +289,7 @@ namespace SpriteTest
         /// <param name="e"></param>
         private void button4_Click(object sender, EventArgs e)
         {
-            DirectoryInfo folder = new DirectoryInfo(System.Environment.CurrentDirectory);
+            DirectoryInfo folder = new DirectoryInfo(textBox3.Text);
             List<string> filenames = new List<string>();
             int addnum = Convert.ToInt32(textBox2.Text);
             foreach (var NextFolder in folder.GetFiles("*.png"))
@@ -273,7 +301,7 @@ namespace SpriteTest
             }
             foreach (var item in filenames)
             {
-                using (Bitmap map = (Bitmap)Image.FromFile(System.Environment.CurrentDirectory + "/" + item))
+                using (Bitmap map = (Bitmap)Image.FromFile(textBox3.Text + "/" + item))
                 {
                     using (Bitmap editMap = new Bitmap(map.Width + addnum, map.Height))
                     {
@@ -306,11 +334,12 @@ namespace SpriteTest
                             }
                         }
                         //保存
-                        string savepath = System.Environment.CurrentDirectory + @"\result\" + item;
+                        string savepath = textBox3.Text + @"\result\" + item;
                         editMap.Save(savepath);
                     }
                 }
             }
+            MessageBox.Show("操作完成");
         }
 
         private void label1_Click(object sender, EventArgs e)
@@ -320,11 +349,11 @@ namespace SpriteTest
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            string path = System.Environment.CurrentDirectory + "/result";
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
+            //string path = System.Environment.CurrentDirectory + "/result";
+            //if (!Directory.Exists(path))
+            //{
+            //    Directory.CreateDirectory(path);
+            //}
         }
     }
     class Param
